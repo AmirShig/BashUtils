@@ -1,0 +1,188 @@
+s21_grep.c:
+s21_grep.c:int main(int argc, char *argv[]) {
+s21_grep.c:  Flags f = {0};
+s21_grep.c:  // char *fe_pattern = malloc(sizeof(char) * BUF_SIZE);
+s21_grep.c:  char fe_pattern[BUF_SIZE_4];
+s21_grep.c:  int error = 0;
+s21_grep.c:  if (argc < 3) {
+s21_grep.c:    error = 1;
+s21_grep.c:    fprintf(
+s21_grep.c:        stderr,
+s21_grep.c:        "usage: s21_grep [-eivclnhsfo] [-e pattern] [-f file] [pattern] [file "
+s21_grep.c:        "...]\n");
+s21_grep.c:  } else {
+s21_grep.c:    error = parser(argc, argv, &f, fe_pattern);
+s21_grep.c:  }
+s21_grep.c:  if (!error) {
+s21_grep.c:    realise_grep(&f, argc, argv, fe_pattern);
+s21_grep.c:  }
+s21_grep.c:  // if (fe_pattern != NULL) free(fe_pattern);
+s21_grep.c:  return 0;
+s21_grep.c:}
+s21_grep.c:
+s21_grep.c:// int re_alloc(char ***array, int len_p, int len_a) {
+s21_grep.c://   **array = realloc(**array, sizeof(char) * (len_p + len_a + 10));
+s21_grep.c://   int error = (array != NULL ? 0 : 1);
+s21_grep.c://   return error;
+s21_grep.c:// }
+s21_grep.c:
+s21_grep.c:int parser(int argc, char *argv[], Flags *f, char *fe_pattern) {
+s21_grep.c:  const char *short_options = "e:ivclnhsf:o";
+s21_grep.c:  const struct option long_options[] = {{NULL, 0, NULL, 0}};
+s21_grep.c:  int res, option_index = 0, error = 0, length_p = 0, length_opt = 0;
+s21_grep.c:                            &option_index)) != -1) {
+s21_grep.c:    if (res == 'e') {
+s21_grep.c:      length_p = strlen(fe_pattern);
+s21_grep.c:      length_opt = strlen(optarg);
+s21_grep.c:      if (BUF_SIZE_4 - length_p < length_opt) {
+s21_grep.c:        error = 1;
+s21_grep.c:        fprintf(stderr, "ERR: Exceeding the allowed size\n");
+s21_grep.c:        // error = re_alloc(&fe_pattern, length_p, length_opt);
+s21_grep.c:      }else {
+s21_grep.c:        if (f->e_flag) strcat(fe_pattern, "|");
+s21_grep.c:        strcat(fe_pattern, optarg);
+s21_grep.c:        f->e_flag = 1;
+s21_grep.c:      }
+s21_grep.c:    } else if (res == 'i') {
+s21_grep.c:      f->i_flag = 1;
+s21_grep.c:    } else if (res == 'v') {
+s21_grep.c:      f->v_flag = 1;
+s21_grep.c:    } else if (res == 'c') {
+s21_grep.c:      f->c_flag = 1;
+s21_grep.c:    } else if (res == 'l') {
+s21_grep.c:      f->l_flag = 1;
+s21_grep.c:    } else if (res == 'n') {
+s21_grep.c:      f->n_flag = 1;
+s21_grep.c:    } else if (res == 'h') {
+s21_grep.c:      f->h_falg = 1;
+s21_grep.c:    } else if (res == 's') {
+s21_grep.c:      f->s_flag = 1;
+s21_grep.c:    } else if (res == 'f') {
+s21_grep.c:      strcpy(f->filename[f->f_flag], optarg);
+s21_grep.c:      f->f_flag += 1;
+s21_grep.c:    } else if (res == 'o') {
+s21_grep.c:      f->o_flag = 1;
+s21_grep.c:    } else {
+s21_grep.c:      printf(
+s21_grep.c:          "usage: s21_grep [-eivclnhsfo] [-e pattern] [-f file] [pattern] "
+s21_grep.c:          "[file ...]\n");
+s21_grep.c:      error = 1;
+s21_grep.c:    }
+s21_grep.c:  }
+s21_grep.c:  return error;
+s21_grep.c:}
+s21_grep.c:
+s21_grep.c:int flag_f_prepare(Flags *f, char *fe_pattern) {
+s21_grep.c:  char *str = NULL;
+s21_grep.c:  str = (char *)malloc(BUF_SIZE * sizeof(char));
+s21_grep.c:  int error = 0, first = 0, length_pat = 0,
+s21_grep.c:      length_str = 0;  //, j = f->fe_count_pattern;
+s21_grep.c:  FILE *f_file;
+s21_grep.c:  for (int i = 0; i < f->f_flag && !error; i++) {
+s21_grep.c:    f_file = fopen(f->filename[i], "r");
+s21_grep.c:    if (!f_file) {  // если файл в -f не найден
+s21_grep.c:      fprintf(stderr, "s21_grep: %s: No such file or directory\n",
+s21_grep.c:              f->filename[i]);
+s21_grep.c:      error = 1;
+s21_grep.c:    } else {
+s21_grep.c:             NULL && !error) {  // запись строк из файла в массив паттерн
+s21_grep.c:        length_pat = strlen(fe_pattern);
+s21_grep.c:        length_str = strlen(str);
+s21_grep.c:        if (BUF_SIZE_4 - length_pat < length_str) {
+s21_grep.c:          error = 1;
+s21_grep.c:          fprintf(stderr, "ERR: Exceeding the allowed size\n");
+s21_grep.c:          continue;
+s21_grep.c:          // error = re_alloc(&fe_pattern, length_pat, length_str);
+s21_grep.c:        }
+s21_grep.c:        if (*str != '\n') str[strcspn(str, "\n")] = '\0';
+s21_grep.c:        if (f->e_flag || first) strcat(fe_pattern, "|");
+s21_grep.c:        if (!error) strcat(fe_pattern, str);
+s21_grep.c:        first = 1;
+s21_grep.c:        f->fe_count_pattern++;
+s21_grep.c:        // j++;
+s21_grep.c:      }
+s21_grep.c:      fclose(f_file);
+s21_grep.c:    }
+s21_grep.c:  }
+s21_grep.c:  free(str);
+s21_grep.c:  str = NULL;
+s21_grep.c:  return error;
+s21_grep.c:}
+s21_grep.c:
+s21_grep.c:  int cflag = REG_EXTENDED, error = 0, comp = 0,
+s21_grep.c:      cur_file = ((f->e_flag || f->f_flag) ? optind : optind + 1);
+s21_grep.c:  if (f->f_flag) error = flag_f_prepare(f, fe_pattern);
+s21_grep.c:  if (!error) {
+s21_grep.c:    FILE *fp;
+s21_grep.c:    regex_t template;
+s21_grep.c:    if (f->i_flag) {
+s21_grep.c:      cflag = REG_ICASE;
+s21_grep.c:    }
+s21_grep.c:    if (!f->e_flag && !f->f_flag) {
+s21_grep.c:      comp = regcomp(&template, argv[optind], cflag);
+s21_grep.c:    } else {
+s21_grep.c:      comp = regcomp(&template, fe_pattern, cflag);
+s21_grep.c:    }
+s21_grep.c:      int file_match = 0, match_line_count = 0, no_match_line_count = 0;
+s21_grep.c:      fp = fopen(argv[cur_file], "rb+");
+s21_grep.c:      if (!fp) {
+s21_grep.c:        if (!f->s_flag)
+s21_grep.c:          fprintf(stderr, "%s: %s: No such file or directory\n", argv[0],
+s21_grep.c:                  argv[cur_file]);
+s21_grep.c:      } else {
+s21_grep.c:        char *str = NULL;
+s21_grep.c:        str = (char *)malloc(BUF_SIZE * sizeof(char));
+s21_grep.c:        int cur_line_number = 1;
+s21_grep.c:        size_t nmatch = 1;
+s21_grep.c:        regmatch_t pmatch[1024];
+s21_grep.c:          str[strcspn(str, "\n")] = '\n';
+s21_grep.c:          str[strcspn(str, "\n") + 1] = '\0';
+s21_grep.c:          int val = REG_NOMATCH;
+s21_grep.c:          // if (f->e_flag != 0 || f->f_flag != 0) {
+s21_grep.c:          //   template = e_opt(f, &val, template, cflag, str, nmatch, pmatch);
+s21_grep.c:          // } else {
+s21_grep.c:          val = regexec(&template, str, nmatch, pmatch, 0);
+s21_grep.c:          // }
+s21_grep.c:          reading_file(f, template, argc, argv, cur_file, &match_line_count,
+s21_grep.c:                       &file_match, &no_match_line_count, nmatch, pmatch, val,
+s21_grep.c:                       str, cur_line_number);
+s21_grep.c:          cur_line_number++;
+s21_grep.c:          // if (f->fe_count_pattern) regfree(&template);
+s21_grep.c:        }
+s21_grep.c:        lc_opt(argc, argv, f, cur_file, no_match_line_count, file_match,
+s21_grep.c:               match_line_count);
+s21_grep.c:        if (str != NULL) free(str);
+s21_grep.c:        fclose(fp);
+s21_grep.c:      }
+s21_grep.c:      cur_file++;
+s21_grep.c:    }
+s21_grep.c:    if (!comp) regfree(&template);
+s21_grep.c:    if (comp) fprintf(stderr, "ERR %d: regcomp error\n", comp);
+s21_grep.c:  }
+s21_grep.c:}
+s21_grep.c:
+s21_grep.c:                  int cur_file, int *match_line_count, int *file_match,
+s21_grep.c:                  int *no_match_line_count, size_t nmatch, regmatch_t pmatch[],
+s21_grep.c:                  int val, char *str, int cur_line_number) {
+s21_grep.c:  if (val == 0) {
+s21_grep.c:    if (f->n_flag && !f->c_flag && !f->l_flag && !f->v_flag) {
+s21_grep.c:      if ((argc - (f->fe_count_pattern ? optind : optind + 1)) > 1 &&
+s21_grep.c:          !f->h_falg) {
+s21_grep.c:        printf("%s:%d:", argv[cur_file], cur_line_number);
+s21_grep.c:      } else {
+s21_grep.c:        printf("%d:", cur_line_number);
+s21_grep.c:      }
+s21_grep.c:    }
+s21_grep.c:    if (!f->v_flag && !f->c_flag && !f->l_flag && !f->o_flag) {
+s21_grep.c:      if ((argc - (f->fe_count_pattern ? optind : optind + 1)) > 1 &&
+s21_grep.c:          !f->h_falg && !f->n_flag) {
+s21_grep.c:        printf("%s:%s", argv[cur_file], str);
+s21_grep.c:      } else {
+s21_grep.c:        printf("%s", str);
+s21_grep.c:      }
+s21_grep.c:    }
+s21_grep.c:    if (f->o_flag && !f->v_flag && !f->c_flag && !f->l_flag) {
+s21_grep.c:      o_opt(str, f, template, argc, argv, cur_file, nmatch, pmatch);
+s21_grep.c:    }
+s21_grep.c:    *match_line_count += 1;
+s21_grep.c
